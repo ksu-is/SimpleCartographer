@@ -6,10 +6,11 @@ import staticmaps
 import json
 import requests
 from tkinter import *
+from tkinter import ttk
 
-class App(Frame):
+class Mapper(Frame):
     """
-    An example of a calculator app developed using the 
+    An example of a Mapping app developed using the 
     Tkinter GUI.
     """
 
@@ -19,10 +20,10 @@ class App(Frame):
         :param master: root.Tk()
         """
         Frame.__init__(self, master)
-        self.entry = Entry(master, width=36, font=("Arial",25))
+        self.entry = ttk.Combobox(master, height= 7, width= 36, values= ["World Imagery","osm","stamen-terrain", "This is progress"])
         self.entry.grid(row=0, column=0, columnspan=6, sticky="w")
         self.entry.focus_set()
-        self.entry.configure(state="disabled", disabledbackground="white", disabledforeground="black")
+        self.entry.configure(state="readonly")
         self.create_widgets()
         self.bind_buttons(master)
         self.grid()
@@ -74,7 +75,7 @@ class App(Frame):
         """
         self.entry.configure(state="normal")
         e = self.entry.get()
-        e = e.replace("√","sqr")
+        e = e.replace (staticmaps.tile_provider_ArcGISWorldImagery,"World Imagery")
         e = e.replace("×", "*")
         e = e.replace("²", "**2")
         e = e.replace("^", "**")
@@ -95,6 +96,33 @@ class App(Frame):
             else:
                 self.entry.insert(0, ans)
         self.entry.configure(state="disabled")
+    def basemap(self):
+        self.basemaped = ttk.Combobox(master, state= "readonly", height= 7, width= 36, values= ["World Imagery","osm","stamen-terrain", "This is progress"])
+        self.basemaped.grid(row=0, column=0, columnspan=6, sticky="w")
+        e = self.basemaped.get()
+        e = e.replace (staticmaps.tile_provider_ArcGISWorldImagery,"World Imagery")
+        
+    def line(self):
+
+        context = staticmaps.Context()
+        context.set_tile_provider(self.basemap)
+
+        linestart = staticmaps.create_latlng(50.110644, 8.682092)
+        lineend = staticmaps.create_latlng(40.712728, -74.006015)
+
+        context.add_object(staticmaps.Line([linestart, lineend], color=staticmaps.BLUE, width=4))
+        import PIL.ImageDraw
+
+        def textsize(self: PIL.ImageDraw.ImageDraw, *args, **kwargs):
+            x, y, w, h = self.textbbox((0, 0), *args, **kwargs)
+            return w, h
+
+        # Monkeypatch fix for https://github.com/flopp/py-staticmaps/issues/39
+        PIL.ImageDraw.ImageDraw.textsize = textsize
+
+        # render png via pillow
+        image = context.render_pillow(800, 500)
+        image.save("frankfurt_newyork.pillow.png")
 
     def flash(self,btn):
         """
@@ -152,8 +180,8 @@ class App(Frame):
         Creates the widgets to be used in the grid.
         :return: None
         """
-        self.sin_bttn = Button(self, text="sin", width=9, height=3, command=lambda: self.add_chr('sin'))
-        self.sin_bttn.grid(row=1, column=6)
+        self.imagery_bttn = Button(self, text="Satellite Imagery", width=9, height=3, command=lambda: self.add_chr('sin'))
+        self.imagery_bttn.grid(row=1, column=6)
 
         self.cos_bttn = Button(self, text="cos", width=9, height=3, command=lambda: self.add_chr('cos'))
         self.cos_bttn.grid(row=2, column=6)
@@ -203,7 +231,7 @@ class App(Frame):
         self.six_bttn = Button(self, text="6", width=9, height=3, command=lambda: self.add_chr(6))
         self.six_bttn.grid(row=2, column=2)
 
-        self.one_bttn = Button(self, text="Nicholas", width=9, height=3, command=lambda: self.add_chr("Reed"))
+        self.one_bttn = Button(self, text="Nicholas", width=9, height=3, command=lambda: self.line)
         self.one_bttn.grid(row=3, column=0)
 
         self.two_bttn = Button(self, text="2", width=9, height=3, command=lambda: self.add_chr(2))
@@ -233,5 +261,5 @@ class App(Frame):
 root = Tk()
 root.geometry()
 root.title("Exciting GUI Cartographer")
-app = App(root)
+app = Mapper(root)
 root.mainloop()
