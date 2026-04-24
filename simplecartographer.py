@@ -7,7 +7,12 @@ import json
 import requests
 from tkinter import *
 from tkinter import ttk
-
+tile_providers = {
+    "OSM": staticmaps.tile_provider_OSM,
+    "World Imagery": staticmaps.tile_provider_ArcGISWorldImagery,
+    "Carto_Dark": staticmaps.tile_provider_CartoDarkNoLabels,
+    "": staticmaps.tile_provider_None
+}
 class Mapper(Frame):
     """
     An example of a Mapping app developed using the 
@@ -20,7 +25,7 @@ class Mapper(Frame):
         :param master: root.Tk()
         """
         Frame.__init__(self, master)
-        self.entry = ttk.Combobox(master, height= 7, width= 36, values= ["World Imagery","osm","stamen-terrain", "This is progress"])
+        self.entry = ttk.Combobox(master, height= 7, width= 36, values= list(tile_providers.keys()))
         self.entry.grid(row=0, column=0, columnspan=6, sticky="w")
         self.entry.focus_set()
         self.entry.configure(state="readonly")
@@ -73,39 +78,13 @@ class Mapper(Frame):
         the eval() method.
         :return: None
         """
-        self.entry.configure(state="normal")
-        e = self.entry.get()
-        e = e.replace (staticmaps.tile_provider_ArcGISWorldImagery,"World Imagery")
-        e = e.replace("×", "*")
-        e = e.replace("²", "**2")
-        e = e.replace("^", "**")
-        e = e.replace("÷", "/")
-        e = e.replace("sin","Sin")
-        e = e.replace("cos","Cos")
-        e = e.replace("tan","Tan")
-
-        try:
-            ans = eval(e)
-        except Exception as ex:
-            self.entry.delete(0,END)
-            self.entry.insert(0, "Invalid Input")
-        else:
-            self.entry.delete(0,END)
-            if len(str(ans)) > 20: # Alleviates problem of large numbers
-                self.entry.insert(0, '{:.10e}'.format(ans))
-            else:
-                self.entry.insert(0, ans)
-        self.entry.configure(state="disabled")
-    def basemap(self):
-        self.basemaped = ttk.Combobox(master, state= "readonly", height= 7, width= 36, values= ["World Imagery","osm","stamen-terrain", "This is progress"])
-        self.basemaped.grid(row=0, column=0, columnspan=6, sticky="w")
-        e = self.basemaped.get()
-        e = e.replace (staticmaps.tile_provider_ArcGISWorldImagery,"World Imagery")
+        self.entry.configure(state="readonly")
+        self.entry.get()
         
     def line(self):
-
+        wumbo = self.entry.get()
         context = staticmaps.Context()
-        context.set_tile_provider(self.basemap)
+        context.set_tile_provider(tile_providers[wumbo])
 
         linestart = staticmaps.create_latlng(50.110644, 8.682092)
         lineend = staticmaps.create_latlng(40.712728, -74.006015)
@@ -231,7 +210,7 @@ class Mapper(Frame):
         self.six_bttn = Button(self, text="6", width=9, height=3, command=lambda: self.add_chr(6))
         self.six_bttn.grid(row=2, column=2)
 
-        self.one_bttn = Button(self, text="Nicholas", width=9, height=3, command=lambda: self.line)
+        self.one_bttn = Button(self, text="Nicholas", width=9, height=3, command=lambda: self.line())
         self.one_bttn.grid(row=3, column=0)
 
         self.two_bttn = Button(self, text="2", width=9, height=3, command=lambda: self.add_chr(2))

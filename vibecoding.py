@@ -1,0 +1,97 @@
+
+import tkinter as tk
+from tkinter import ttk
+import staticmaps
+import PIL.ImageDraw
+from PIL import Image, ImageTk
+
+def textsize(self: PIL.ImageDraw.ImageDraw, *args, **kwargs):
+    x, y, w, h = self.textbbox((0, 0), *args, **kwargs)
+    return w, h
+
+# Monkeypatch fix for https://github.com/flopp/py-staticmaps/issues/39
+PIL.ImageDraw.ImageDraw.textsize = textsize
+# -----------------------------
+# Map generation function
+# -----------------------------
+def generate_map():
+    map_type = map_type_combo.get()
+    zoom = int(zoom_combo.get())
+
+    context = staticmaps.Context()
+    context.set_tile_provider(tile_providers[map_type])
+    context.set_zoom(zoom)
+
+    # Add marker (Atlanta, GA)
+    context.add_object(
+        staticmaps.Marker(
+            staticmaps.create_latlng(33.7490, -84.3880),
+            color=staticmaps.RED,
+            size=12
+        )
+    )
+
+    image = context.render_pillow(600, 400)
+    image.save("map.png")
+
+    display_map("map.png")
+
+# -----------------------------
+# Display image in Tkinter
+# -----------------------------
+def display_map(path):
+    img = Image.open(path)
+    img_tk = ImageTk.PhotoImage(img)
+    map_label.config(image=img_tk)
+    map_label.image = img_tk
+
+# -----------------------------
+# Combobox event handler
+# -----------------------------
+def on_selection_change(event):
+    generate_map()
+
+# -----------------------------
+# Tkinter UI
+# -----------------------------
+root = tk.Tk()
+root.title("py-staticmaps Combobox Example")
+
+control_frame = ttk.Frame(root)
+control_frame.pack(pady=5)
+
+# Tile providers
+tile_providers = {
+    "OSM": staticmaps.tile_provider_OSM,
+    "Toner": staticmaps.tile_provider_StamenToner,
+    "Terrain": staticmaps.tile_provider_StamenTerrain
+}
+
+ttk.Label(control_frame, text="Map Style:").grid(row=0, column=0, padx=5)
+map_type_combo = ttk.Combobox(
+    control_frame,
+    values=list(tile_providers.keys()),
+    state="readonly"
+)
+map_type_combo.current(0)
+map_type_combo.grid(row=0, column=1)
+map_type_combo.bind("<<ComboboxSelected>>", on_selection_change)
+
+ttk.Label(control_frame, text="Zoom:").grid(row=0, column=2, padx=5)
+zoom_combo = ttk.Combobox(
+    control_frame,
+    values=[4, 5, 6, 7, 8, 9, 10],
+    state="readonly",
+    width=5
+)
+zoom_combo.current(3)
+zoom_combo.grid(row=0, column=3)
+zoom_combo.bind("<<ComboboxSelected>>", on_selection_change)
+
+map_label = ttk.Label(root)
+map_label.pack(pady=10)
+
+# Initial render
+generate_map()
+
+root.mainloop()
