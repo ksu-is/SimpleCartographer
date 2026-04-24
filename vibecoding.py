@@ -19,8 +19,10 @@ def generate_map():
     zoom = int(zoom_combo.get())
     marker_color = marker_color_combo.get()
     #line_color = line_color_combo.get()
-
-
+    try:
+        marker_lat = float(marker_lat_spin.get())
+    except ValueError:
+        marker_lat = float(marker_lat_spin.get()+"1")
     context = staticmaps.Context()
     context.set_tile_provider(tile_providers[map_type])
     context.set_zoom(zoom)
@@ -28,7 +30,7 @@ def generate_map():
     # Add marker (Atlanta, GA)
     context.add_object(
         staticmaps.Marker(
-            staticmaps.create_latlng(33.7490, -84.3880),
+            staticmaps.create_latlng(marker_lat, -84.3880),
             color=(color_map[marker_color]),
             size=12
         )
@@ -115,6 +117,18 @@ marker_color_combo = ttk.Combobox(
 marker_color_combo.current(0)
 marker_color_combo.grid(row=0, column=5)
 marker_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
+
+ttk.Label(control_frame, text="Marker Latitude:").grid(row=1, column=0, padx=5)
+marker_lat_spin = ttk.Spinbox(
+    control_frame,
+    from_= -89,
+    to= 89,
+
+)
+marker_lat_spin.grid(row=1, column=1)
+marker_lat_spin.bind("<<Increment>>", on_selection_change)
+marker_lat_spin.bind("<<Decrement>>", on_selection_change)
+marker_lat_spin.bind("<Return>", on_selection_change)
 
 map_label = ttk.Label(root)
 map_label.pack(pady=10)
