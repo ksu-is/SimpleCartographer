@@ -17,6 +17,9 @@ PIL.ImageDraw.ImageDraw.textsize = textsize
 def generate_map():
     map_type = map_type_combo.get()
     zoom = int(zoom_combo.get())
+    marker_color = marker_color_combo.get()
+    #line_color = line_color_combo.get()
+
 
     context = staticmaps.Context()
     context.set_tile_provider(tile_providers[map_type])
@@ -26,7 +29,7 @@ def generate_map():
     context.add_object(
         staticmaps.Marker(
             staticmaps.create_latlng(33.7490, -84.3880),
-            color=staticmaps.RED,
+            color=(color_map[marker_color]),
             size=12
         )
     )
@@ -63,9 +66,24 @@ control_frame.pack(pady=5)
 # Tile providers
 tile_providers = {
     "OSM": staticmaps.tile_provider_OSM,
-    "Toner": staticmaps.tile_provider_StamenToner,
-    "Terrain": staticmaps.tile_provider_StamenTerrain
+    "World Imagery": staticmaps.tile_provider_ArcGISWorldImagery,
+    "Carto_Dark": staticmaps.tile_provider_CartoDarkNoLabels,
+    "None": staticmaps.tile_provider_None
 }
+
+color_map = {
+    "Black": staticmaps.BLACK,
+    "Blue": staticmaps.BLUE,
+    "Brown": staticmaps.BROWN,
+    "Green": staticmaps.GREEN,
+    "Orange": staticmaps.ORANGE,
+    "Purple": staticmaps.PURPLE,
+    "Red": staticmaps.RED,
+    "Yellow": staticmaps.YELLOW,
+    "White": staticmaps.WHITE,
+    "Transparent": staticmaps.TRANSPARENT
+}
+
 
 ttk.Label(control_frame, text="Map Style:").grid(row=0, column=0, padx=5)
 map_type_combo = ttk.Combobox(
@@ -87,6 +105,16 @@ zoom_combo = ttk.Combobox(
 zoom_combo.current(3)
 zoom_combo.grid(row=0, column=3)
 zoom_combo.bind("<<ComboboxSelected>>", on_selection_change)
+
+ttk.Label(control_frame, text="Marker Color:").grid(row=0, column=4, padx=5)
+marker_color_combo = ttk.Combobox(
+    control_frame,
+    values=list(color_map.keys()),
+    state="readonly"
+)
+marker_color_combo.current(0)
+marker_color_combo.grid(row=0, column=5)
+marker_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
 
 map_label = ttk.Label(root)
 map_label.pack(pady=10)
