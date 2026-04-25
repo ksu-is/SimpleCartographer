@@ -21,20 +21,23 @@ def generate_map():
     #line_color = line_color_combo.get()
     try:
         marker_lat = float(marker_lat_spin.get())
+        marker_long = float(marker_long_spin.get())
     except ValueError:
         marker_lat = float(marker_lat_spin.get()+"1")
+        marker_long = float(marker_long_spin.get()+"1")
     context = staticmaps.Context()
     context.set_tile_provider(tile_providers[map_type])
     context.set_zoom(zoom)
 
-    # Add marker (Atlanta, GA)
-    context.add_object(
-        staticmaps.Marker(
-            staticmaps.create_latlng(marker_lat, -84.3880),
-            color=(color_map[marker_color]),
-            size=12
+    # Add marker
+    if marker_var.get() == "1":
+        context.add_object(
+            staticmaps.Marker(
+                staticmaps.create_latlng(marker_lat, marker_long),
+                color=(color_map[marker_color]),
+                size=12
+            )
         )
-    )
 
     image = context.render_pillow(600, 400)
     image.save("map.png")
@@ -60,7 +63,7 @@ def on_selection_change(event):
 # Tkinter UI
 # -----------------------------
 root = tk.Tk()
-root.title("py-staticmaps Combobox Example")
+root.title("Simple Cartographer")
 
 control_frame = ttk.Frame(root)
 control_frame.pack(pady=5)
@@ -118,17 +121,30 @@ marker_color_combo.current(0)
 marker_color_combo.grid(row=0, column=5)
 marker_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
 
-ttk.Label(control_frame, text="Marker Latitude:").grid(row=1, column=0, padx=5)
+ttk.Label(control_frame, text="Marker Latitude:").grid(row=1, column=1, padx=5)
 marker_lat_spin = ttk.Spinbox(
     control_frame,
     from_= -89,
     to= 89,
-
 )
-marker_lat_spin.grid(row=1, column=1)
+marker_lat_spin.grid(row=1, column=3)
 marker_lat_spin.bind("<<Increment>>", on_selection_change)
 marker_lat_spin.bind("<<Decrement>>", on_selection_change)
 marker_lat_spin.bind("<Return>", on_selection_change)
+
+ttk.Label(control_frame, text="Marker Longitude:").grid(row=1, column=4, padx=5)
+marker_long_spin = ttk.Spinbox(
+    control_frame,
+    from_= -89,
+    to= 89,
+)
+marker_long_spin.grid(row=1, column=5)
+marker_long_spin.bind("<<Increment>>", on_selection_change)
+marker_long_spin.bind("<<Decrement>>", on_selection_change)
+marker_long_spin.bind("<Return>", on_selection_change)
+
+marker_var = tk.IntVar
+marker_button = ttk.Checkbutton(control_frame, text="Marker", variable= marker_var).grid(row=1, column=0, padx=5)
 
 map_label = ttk.Label(root)
 map_label.pack(pady=10)
