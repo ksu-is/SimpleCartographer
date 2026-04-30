@@ -30,7 +30,7 @@ def generate_map():
     context.set_zoom(zoom)
 
     # Add marker
-    if marker_var.get() == "1":
+    if show_marker.get():
         context.add_object(
             staticmaps.Marker(
                 staticmaps.create_latlng(marker_lat, marker_long),
@@ -135,16 +135,17 @@ marker_lat_spin.bind("<Return>", on_selection_change)
 ttk.Label(control_frame, text="Marker Longitude:").grid(row=1, column=4, padx=5)
 marker_long_spin = ttk.Spinbox(
     control_frame,
-    from_= -89,
-    to= 89,
+    from_= -180,
+    to= 179,
+    wrap= True
 )
 marker_long_spin.grid(row=1, column=5)
 marker_long_spin.bind("<<Increment>>", on_selection_change)
 marker_long_spin.bind("<<Decrement>>", on_selection_change)
 marker_long_spin.bind("<Return>", on_selection_change)
-
-marker_var = tk.IntVar
-marker_button = ttk.Checkbutton(control_frame, text="Marker", variable= marker_var).grid(row=1, column=0, padx=5)
+    
+show_marker = tk.BooleanVar(value=True)
+marker_button = ttk.Checkbutton(control_frame, text="Marker", variable= show_marker).grid(row=1, column=0, padx=5)
 
 map_label = ttk.Label(root)
 map_label.pack(pady=10)

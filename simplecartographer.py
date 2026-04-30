@@ -5,18 +5,49 @@ import gpxpy
 import staticmaps
 import json
 import requests
-from tkinter import *
+import tkinter as tk
 from tkinter import ttk
+import PIL.ImageDraw
+from PIL import Image, ImageTk
+
+def textsize(self: PIL.ImageDraw.ImageDraw, *args, **kwargs):
+    x, y, w, h = self.textbbox((0, 0), *args, **kwargs)
+    return w, h
+# Monkeypatch fix for https://github.com/flopp/py-staticmaps/issues/39
+PIL.ImageDraw.ImageDraw.textsize = textsize
+def display_map(path):
+    img = Image.open(path)
+    img_tk = ImageTk.PhotoImage(img)
+    map_label = ttk.Label(root)
+    map_label.pack(pady=10)
+    map_label.config(image=img_tk)
+    map_label.image = img_tk
+
+
 tile_providers = {
     "OSM": staticmaps.tile_provider_OSM,
     "World Imagery": staticmaps.tile_provider_ArcGISWorldImagery,
     "Carto_Dark": staticmaps.tile_provider_CartoDarkNoLabels,
-    "": staticmaps.tile_provider_None
+    "None": staticmaps.tile_provider_None
 }
-class Mapper(Frame):
+
+color_map = {
+    "Black": staticmaps.BLACK,
+    "Blue": staticmaps.BLUE,
+    "Brown": staticmaps.BROWN,
+    "Green": staticmaps.GREEN,
+    "Orange": staticmaps.ORANGE,
+    "Purple": staticmaps.PURPLE,
+    "Red": staticmaps.RED,
+    "Yellow": staticmaps.YELLOW,
+    "White": staticmaps.WHITE,
+    "Transparent": staticmaps.TRANSPARENT
+}
+
+class Mapper(ttk.Frame):
     """
     An example of a Mapping app developed using the 
-    Tkinter GUI.
+    Tkinter and ttk GUI.
     """
 
     def __init__(self, master):
@@ -24,106 +55,55 @@ class Mapper(Frame):
         Initializes the frame.
         :param master: root.Tk()
         """
-        Frame.__init__(self, master)
-        self.entry = ttk.Combobox(master, height= 7, width= 36, values= list(tile_providers.keys()))
-        self.entry.grid(row=0, column=0, columnspan=6, sticky="w")
-        self.entry.focus_set()
-        self.entry.configure(state="readonly")
+        ttk.Frame.__init__(self, master)
+        self.show_marker = tk.BooleanVar(value=True)
         self.create_widgets()
         self.bind_buttons(master)
-        self.grid()
-        
-    def add_chr(self, char, btn=None):
-        """
-        Concatenates a character passed from a button press (or key type) 
-        to a string.
-        :param char: string to add passed from a button
-        :param btn: button name to use if key is pressed (to flash)
-        :return: None
-        """
-        self.entry.configure(state="normal")
-        self.flash(btn) # Flash a button correspond to keystroke
-        if self.entry.get() == "Invalid Input":
-            self.entry.delete(0,END)
-        self.entry.insert(END, char)
-        self.entry.configure(state="disabled")
-
-    def clear(self):
-        """
-        Allows user to backspace their entry.
-        :return: None
-        """
-        self.entry.configure(state="normal")
-        if self.entry.get() != "Invalid Input":
-            # Clears full entry when "Invalid Input"
-            text = self.entry.get()[:-1]
-            self.entry.delete(0,END)
-            self.entry.insert(0,text)
-        else:
-            self.entry.delete(0, END)
-        self.entry.configure(state="disabled")
-
-    def clear_all(self):
-        """
-        Allows user to clear the full entry.
-        :return: None
-        """
-        self.entry.configure(state="normal")
-        self.entry.delete(0, END)
-        self.entry.configure(state="disabled")
-
-    def calculate(self):
-        """
-        Changes the operation symbols to their mathematical representation used in 
-        the eval() method.
-        :return: None
-        """
-        self.entry.configure(state="readonly")
-        self.entry.get()
-        
-    def line(self):
-        wumbo = self.entry.get()
+    def generate_map(self):
+        self.map_type = self.map_type_combo.get()
+        zoom = int(self.zoom_combo.get())
+        self.marker_color = self.marker_color_combo.get()
+        #line_color = line_color_combo.get()
+        try:
+            marker_lat = float(self.marker_lat_spin.get())
+            marker_long = float(self.marker_long_spin.get())
+        except ValueError:
+            marker_lat = float(self.marker_lat_spin.get()+"1")
+            marker_long = float(self.marker_long_spin.get()+"1")
         context = staticmaps.Context()
-        context.set_tile_provider(tile_providers[wumbo])
+        context.set_tile_provider(tile_providers[self.map_type])
+        context.set_zoom(zoom)
 
-        linestart = staticmaps.create_latlng(50.110644, 8.682092)
-        lineend = staticmaps.create_latlng(40.712728, -74.006015)
+        # Add marker
+        if self.show_marker.get():
+            context.add_object(
+                staticmaps.Marker(
+                    staticmaps.create_latlng(marker_lat, marker_long),
+                    color=(color_map[self.marker_color]),
+                    size=12
+                )
+            )
 
-        context.add_object(staticmaps.Line([linestart, lineend], color=staticmaps.BLUE, width=4))
-        import PIL.ImageDraw
+        image = context.render_pillow(600, 400)
+        image.save("newmap.png")
 
-        def textsize(self: PIL.ImageDraw.ImageDraw, *args, **kwargs):
-            x, y, w, h = self.textbbox((0, 0), *args, **kwargs)
-            return w, h
+        display_map("newmap.png")
 
-        # Monkeypatch fix for https://github.com/flopp/py-staticmaps/issues/39
-        PIL.ImageDraw.ImageDraw.textsize = textsize
+    # -----------------------------
+    # Display image in Tkinter
+    # -----------------------------
+    #def display_map(path):
+        #img_tk = ImageTk.PhotoImage(img)
+        #map_label = ttk.Label(self)
+        #map_label.pack(pady=10)
+        #map_label.config(image=img_tk)
+        #map_label.image = img_tk
 
-        # render png via pillow
-        image = context.render_pillow(800, 500)
-        image.save("frankfurt_newyork.pillow.png")
-
-    def flash(self,btn):
-        """
-        Flashes a corresponding button when key is pressed.
-        :param btn: button
-        :return: None
-        """
-        if btn != None:
-            btn.config(bg="yellow")
-            if btn == self.c_bttn:
-                self.clear()
-                self.master.after(100, lambda: btn.config(bg="SystemButtonFace"))
-            elif btn == self.eq_bttn:
-                self.master.after(100, lambda: btn.config(bg="lightgrey"))
-                self.calculate()
-            elif btn == self.ac_bttn:
-                self.clear_all()
-                self.master.after(100, lambda: btn.config(bg="SystemButtonFace"))
-            else:
-                self.master.after(100, lambda: btn.config(bg="SystemButtonFace"))
-        else:
-            pass
+    # -----------------------------
+    # Combobox event handler
+    # -----------------------------
+    def on_selection_change():
+        generate_map()
 
     def bind_buttons(self, master):
         """
@@ -131,114 +111,77 @@ class Mapper(Frame):
         :param master: root.Tk()
         :return: None
         """
-        master.bind("<Return>", lambda event, btn=self.eq_bttn: self.flash(btn))
-        master.bind("<BackSpace>", lambda event, btn=self.c_bttn: self.flash(btn))
-        master.bind("9", lambda event, char="9", btn=self.nine_bttn: self.add_chr(char, btn))
-        master.bind("8", lambda event, char="8", btn=self.eight_bttn: self.add_chr(char, btn))
-        master.bind("7", lambda event, char="7", btn=self.seven_bttn: self.add_chr(char, btn))
-        master.bind("6", lambda event, char="6", btn=self.six_bttn: self.add_chr(char, btn))
-        master.bind("5", lambda event, char="5", btn=self.five_bttn: self.add_chr(char, btn))
-        master.bind("4", lambda event, char="DT", btn=self.four_bttn: self.add_chr(char, btn))
-        master.bind("3", lambda event, char="3", btn=self.three_bttn: self.add_chr(char, btn))
-        master.bind("2", lambda event, char="2", btn=self.two_bttn: self.add_chr(char, btn))
-        master.bind("1", lambda event, char="1", btn=self.one_bttn: self.add_chr(char, btn))
-        master.bind("0", lambda event, char="0", btn=self.zero_bttn: self.add_chr(char, btn))
-        master.bind("*", lambda event, char="×", btn=self.mult_bttn: self.add_chr(char, btn))
-        master.bind("/", lambda event, char="÷", btn=self.div_bttn: self.add_chr(char, btn))
-        master.bind("^", lambda event, char="^", btn=self.sqr_bttn: self.add_chr(char, btn))
-        master.bind("%", lambda event, char="%", btn=self.mod_bttn: self.add_chr(char, btn))
-        master.bind(".", lambda event, char=".", btn=self.dec_bttn: self.add_chr(char, btn))
-        master.bind("-", lambda event, char="-", btn=self.sub_bttn: self.add_chr(char, btn))
-        master.bind("+", lambda event, char="+", btn=self.add_bttn: self.add_chr(char, btn))
-        master.bind("(", lambda event, char="(", btn=self.lpar_bttn: self.add_chr(char, btn))
-        master.bind(")", lambda event, char=")", btn=self.rpar_bttn: self.add_chr(char, btn))
-        master.bind("c", lambda event, btn=self.ac_bttn: self.flash(btn), self.clear_all)
+        self.map_type_combo.bind("<<ComboboxSelected>>", self.on_selection_change)
+        self.zoom_combo.bind("<<ComboboxSelected>>", self.on_selection_change)
+        self.marker_color_combo.bind("<<ComboboxSelected>>", self.on_selection_change)
+        self.marker_lat_spin.bind("<<Increment>>", self.on_selection_change)
+        self.marker_lat_spin.bind("<<Decrement>>", self.on_selection_change)
+        self.marker_lat_spin.bind("<Return>", self.on_selection_change)
+        self.marker_long_spin.bind("<<Increment>>", self.on_selection_change)
+        self.marker_long_spin.bind("<<Decrement>>", self.on_selection_change)
+        self.marker_long_spin.bind("<Return>", self.on_selection_change)
+        
     
     def create_widgets(self):
         """
         Creates the widgets to be used in the grid.
         :return: None
         """
-        self.imagery_bttn = Button(self, text="Satellite Imagery", width=9, height=3, command=lambda: self.add_chr('sin'))
-        self.imagery_bttn.grid(row=1, column=6)
+        ttk.Label(self, text="Map Style:").grid(row=0, column=0, padx=5)
+        self.map_type_combo = ttk.Combobox(
+            self,
+            values=list(tile_providers.keys()),
+            state="readonly"
+        )
+        self.map_type_combo.current(0)
+        self.map_type_combo.grid(row=0, column=1)
+        ttk.Label(self, text="Zoom:").grid(row=0, column=2, padx=5)
+        
+        self.zoom_combo = ttk.Combobox(
+            self,
+            values=[4, 5, 6, 7, 8, 9, 10],
+            state="readonly",
+            width=5
+        )
+        self.zoom_combo.current(3)
+        self.zoom_combo.grid(row=0, column=3)
 
-        self.cos_bttn = Button(self, text="cos", width=9, height=3, command=lambda: self.add_chr('cos'))
-        self.cos_bttn.grid(row=2, column=6)
+        ttk.Label(self, text="Marker Color:").grid(row=0, column=4, padx=5)
+        self.marker_color_combo = ttk.Combobox(
+            self,
+            values=list(color_map.keys()),
+            state="readonly"
+        )
+        self.marker_color_combo.current(0)
+        self.marker_color_combo.grid(row=0, column=5)
 
-        self.tan_bttn = Button(self, text="tan", width=9, height=3, command=lambda: self.add_chr('tan'))
-        self.tan_bttn.grid(row=3, column=6)
+        ttk.Label(self, text="Marker Latitude:").grid(row=1, column=1, padx=5)
+        self.marker_lat_spin = ttk.Spinbox(
+            self,
+            from_= -89,
+            to= 89,
+        )
+        self.marker_lat_spin.grid(row=1, column=3)
+        ttk.Label(self, text="Marker Longitude:").grid(row=1, column=4, padx=5)
+        self.marker_long_spin = ttk.Spinbox(
+            self,
+            from_= -89,
+            to= 89,
+        )
+        self.marker_long_spin.grid(row=1, column=5)
 
-        self.eq_bttn = Button(self, text="=", width=20, height=3, bg="lightgrey", command=lambda: self.calculate())
-        self.eq_bttn.grid(row=4, column=4, columnspan=2)
+        self.marker_button = ttk.Checkbutton(
+            self, 
+            text="Marker", 
+            variable= self.show_marker, 
+            command= self.generate_map
+            )
+        self.marker_button.grid(row=1, column=0, padx=5)
 
-        self.ac_bttn = Button(self, text='CE', width=9, height=3, command=lambda: self.clear_all())
-        self.ac_bttn.grid(row=1, column=4)
 
-        self.c_bttn = Button(self, text='←', width=9, height=3, command=lambda: self.clear())
-        self.c_bttn.grid(row=1, column=5 )
-
-        self.add_bttn = Button(self, text="+", width=9, height=3, command=lambda: self.add_chr('+'))
-        self.add_bttn.grid(row=4, column=3)
-
-        self.mult_bttn = Button(self, text="×", width=9, height=3, command=lambda: self.add_chr('×'))
-        self.mult_bttn.grid(row=2, column=3)
-
-        self.sub_bttn = Button(self, text="-", width=9, height=3, command=lambda: self.add_chr('-'))
-        self.sub_bttn.grid(row=3, column=3)
-
-        self.div_bttn = Button(self, text="÷", width=9, height=3, command=lambda: self.add_chr('/'))
-        self.div_bttn.grid(row=1, column=3)
-
-        self.mod_bttn = Button(self, text="%", width=9, height=3, command=lambda: self.add_chr('%'))
-        self.mod_bttn.grid(row=4, column=2)
-
-        self.seven_bttn = Button(self, text="7", width=9, height=3, command=lambda: self.add_chr(7))
-        self.seven_bttn.grid(row=1, column=0)
-
-        self.eight_bttn = Button(self, text="8", width=9, height=3, command=lambda: self.add_chr(8))
-        self.eight_bttn.grid(row=1, column=1)
-
-        self.nine_bttn = Button(self, text="9", width=9, height=3, command=lambda: self.add_chr(9))
-        self.nine_bttn.grid(row=1, column=2)
-
-        self.four_bttn = Button(self, text="4", width=9, height=3, command=lambda: self.add_chr(4))
-        self.four_bttn.grid(row=2, column=0)
-
-        self.five_bttn = Button(self, text="5", width=9, height=3, command=lambda: self.add_chr(5))
-        self.five_bttn.grid(row=2, column=1)
-
-        self.six_bttn = Button(self, text="6", width=9, height=3, command=lambda: self.add_chr(6))
-        self.six_bttn.grid(row=2, column=2)
-
-        self.one_bttn = Button(self, text="Nicholas", width=9, height=3, command=lambda: self.line())
-        self.one_bttn.grid(row=3, column=0)
-
-        self.two_bttn = Button(self, text="2", width=9, height=3, command=lambda: self.add_chr(2))
-        self.two_bttn.grid(row=3, column=1)
-
-        self.three_bttn = Button(self, text="3", width=9, height=3, command=lambda: self.add_chr(3))
-        self.three_bttn.grid(row=3, column=2)
-
-        self.zero_bttn = Button(self, text="0", width=9, height=3, command=lambda: self.add_chr(0))
-        self.zero_bttn.grid(row=4, column=0)
-
-        self.dec_bttn = Button(self, text=".", width=9, height=3, command=lambda: self.add_chr('.'))
-        self.dec_bttn.grid(row=4, column=1)
-
-        self.lpar_bttn = Button(self, text="(", width=9, height=3, command=lambda: self.add_chr('('))
-        self.lpar_bttn.grid(row=2, column=4)
-
-        self.rpar_bttn = Button(self, text=")", width=9, height=3, command=lambda: self.add_chr(')'))
-        self.rpar_bttn.grid(row=2, column=5)
-
-        self.sq_bttn = Button(self, text="√", width=9, height=3, command=lambda: self.add_chr('√('))
-        self.sq_bttn.grid(row=3, column=4)
-
-        self.sqr_bttn = Button(self, text="^", width=9, height=3, command=lambda: self.add_chr('^'))
-        self.sqr_bttn.grid(row=3, column=5)
-
-root = Tk()
+root = tk.Tk()
 root.geometry()
 root.title("Exciting GUI Cartographer")
 app = Mapper(root)
+app.pack(fill="both", expand=True)
 root.mainloop()
