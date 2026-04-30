@@ -23,8 +23,8 @@ def generate_map():
         marker_lat = float(marker_lat_spin.get())
         marker_long = float(marker_long_spin.get())
     except ValueError:
-        marker_lat = float(marker_lat_spin.get()+"1")
-        marker_long = float(marker_long_spin.get()+"1")
+        marker_lat = 0
+        marker_long = 0
     context = staticmaps.Context()
     context.set_tile_provider(tile_providers[map_type])
     context.set_zoom(zoom)
@@ -121,23 +121,27 @@ marker_color_combo.current(0)
 marker_color_combo.grid(row=0, column=5)
 marker_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
 
+mark_lat = tk.StringVar(value = 0)
 ttk.Label(control_frame, text="Marker Latitude:").grid(row=1, column=1, padx=5)
 marker_lat_spin = ttk.Spinbox(
     control_frame,
     from_= -89,
     to= 89,
+    textvariable= mark_lat
 )
 marker_lat_spin.grid(row=1, column=3)
 marker_lat_spin.bind("<<Increment>>", on_selection_change)
 marker_lat_spin.bind("<<Decrement>>", on_selection_change)
 marker_lat_spin.bind("<Return>", on_selection_change)
 
+mark_long = tk.StringVar(value = 0)
 ttk.Label(control_frame, text="Marker Longitude:").grid(row=1, column=4, padx=5)
 marker_long_spin = ttk.Spinbox(
     control_frame,
     from_= -180,
     to= 179,
-    wrap= True
+    wrap= True,
+    textvariable= mark_long 
 )
 marker_long_spin.grid(row=1, column=5)
 marker_long_spin.bind("<<Increment>>", on_selection_change)
