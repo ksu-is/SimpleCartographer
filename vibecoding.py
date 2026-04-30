@@ -18,7 +18,7 @@ def generate_map():
     map_type = map_type_combo.get()
     zoom = int(zoom_combo.get())
     marker_color = marker_color_combo.get()
-    #line_color = line_color_combo.get()
+    line_color = line_color_combo.get()
     try:
         marker_lat = float(marker_lat_spin.get())
         marker_long = float(marker_long_spin.get())
@@ -38,7 +38,24 @@ def generate_map():
                 size=12
             )
         )
-
+    try:
+        lin_latone = float(line_latone_spin.get())
+        lin_longone = float(line_longone_spin.get())
+        lin_lattwo = float(line_lattwo_spin.get())
+        lin_longtwo = float(line_longtwo_spin.get())
+    except ValueError:
+        lin_latone = 0
+        lin_longone = 0
+        lin_lattwo = 0
+        lin_longtwo = 0    
+    if show_line.get():
+        line_start = staticmaps.create_latlng(lin_latone,lin_longone)
+        line_end = staticmaps.create_latlng(lin_lattwo, lin_longtwo)
+        context.add_object(
+            staticmaps.Line(
+                [line_start, line_end], color=(color_map[line_color]), width=4
+            )
+        )
     image = context.render_pillow(600, 400)
     image.save("map.png")
 
@@ -103,7 +120,7 @@ map_type_combo.bind("<<ComboboxSelected>>", on_selection_change)
 ttk.Label(control_frame, text="Zoom:").grid(row=0, column=2, padx=5)
 zoom_combo = ttk.Combobox(
     control_frame,
-    values=[4, 5, 6, 7, 8, 9, 10],
+    values=[1,2,3,4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,16,17,18,19,20],
     state="readonly",
     width=5
 )
@@ -120,6 +137,16 @@ marker_color_combo = ttk.Combobox(
 marker_color_combo.current(0)
 marker_color_combo.grid(row=0, column=5)
 marker_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
+
+ttk.Label(control_frame, text="Line Color:").grid(row=0, column=6, padx=5)
+line_color_combo = ttk.Combobox(
+    control_frame,
+    values=list(color_map.keys()),
+    state="readonly"
+)
+line_color_combo.current(0)
+line_color_combo.grid(row=0, column=7)
+line_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
 
 mark_lat = tk.StringVar(value = 0)
 ttk.Label(control_frame, text="Marker Latitude:").grid(row=1, column=1, padx=5)
@@ -150,6 +177,63 @@ marker_long_spin.bind("<Return>", on_selection_change)
     
 show_marker = tk.BooleanVar(value=True)
 marker_button = ttk.Checkbutton(control_frame, text="Marker", variable= show_marker).grid(row=1, column=0, padx=5)
+
+line_latone = tk.StringVar(value = 0)
+ttk.Label(control_frame, text="Line Lat 1:").grid(row=2, column=1, padx=5)
+line_latone_spin = ttk.Spinbox(
+    control_frame,
+    from_= -89,
+    to= 89,
+    textvariable= line_latone
+)
+line_latone_spin.grid(row=2, column=3)
+line_latone_spin.bind("<<Increment>>", on_selection_change)
+line_latone_spin.bind("<<Decrement>>", on_selection_change)
+line_latone_spin.bind("<Return>", on_selection_change)
+
+line_longone = tk.StringVar(value = 0)
+ttk.Label(control_frame, text="Line Long 1:").grid(row=2, column=4, padx=5)
+line_longone_spin = ttk.Spinbox(
+    control_frame,
+    from_= -180,
+    to= 179,
+    wrap= True,
+    textvariable= line_longone 
+)
+line_longone_spin.grid(row=2, column=5)
+line_longone_spin.bind("<<Increment>>", on_selection_change)
+line_longone_spin.bind("<<Decrement>>", on_selection_change)
+line_longone_spin.bind("<Return>", on_selection_change)
+
+line_lattwo = tk.StringVar(value = 0)
+ttk.Label(control_frame, text="Line Lat 2:").grid(row=2, column=6, padx=5)
+line_lattwo_spin = ttk.Spinbox(
+    control_frame,
+    from_= -89,
+    to= 89,
+    textvariable= line_lattwo
+)
+line_lattwo_spin.grid(row=2, column=7)
+line_lattwo_spin.bind("<<Increment>>", on_selection_change)
+line_lattwo_spin.bind("<<Decrement>>", on_selection_change)
+line_lattwo_spin.bind("<Return>", on_selection_change)
+
+line_longtwo = tk.StringVar(value = 0)
+ttk.Label(control_frame, text="Line Long 2:").grid(row=2, column=8, padx=5)
+line_longtwo_spin = ttk.Spinbox(
+    control_frame,
+    from_= -180,
+    to= 179,
+    wrap= True,
+    textvariable= line_longtwo 
+)
+line_longtwo_spin.grid(row=2, column=9)
+line_longtwo_spin.bind("<<Increment>>", on_selection_change)
+line_longtwo_spin.bind("<<Decrement>>", on_selection_change)
+line_longtwo_spin.bind("<Return>", on_selection_change)
+
+show_line =tk.BooleanVar(value=False)
+line_button = ttk.Checkbutton(control_frame, text="Line", variable= show_line).grid(row=2, column=0, padx=5)
 
 map_label = ttk.Label(root)
 map_label.pack(pady=10)
