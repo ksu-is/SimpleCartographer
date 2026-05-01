@@ -19,6 +19,7 @@ def generate_map():
     zoom = int(zoom_combo.get())
     marker_color = marker_color_combo.get()
     line_color = line_color_combo.get()
+    circle_color = circle_color_combo.get()
     try:
         marker_lat = float(marker_lat_spin.get())
         marker_long = float(marker_long_spin.get())
@@ -36,6 +37,25 @@ def generate_map():
                 staticmaps.create_latlng(marker_lat, marker_long),
                 color=(color_map[marker_color]),
                 size=12
+            )
+        )
+    try:
+        circle_lat = float(circle_lat_spin.get())
+        circle_long = float(circle_long_spin.get())
+        radius_km = float(circle_radius_spin.get())
+    except ValueError:
+        circle_lat = 0
+        circle_long = 0
+        radius_km = 0
+    if show_marker.get():
+        context.add_object(
+            staticmaps.Circle(
+                staticmaps.create_latlng(circle_lat, circle_long),
+                radius_km,
+                fill_color=staticmaps.TRANSPARENT,
+                color=(color_map[circle_color]),
+                width=2
+
             )
         )
     try:
@@ -148,6 +168,16 @@ line_color_combo.current(0)
 line_color_combo.grid(row=0, column=7)
 line_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
 
+ttk.Label(control_frame, text="Circle Color:").grid(row=0, column=8, padx=5)
+circle_color_combo = ttk.Combobox(
+    control_frame,
+    values=list(color_map.keys()),
+    state="readonly"
+)
+circle_color_combo.current(0)
+circle_color_combo.grid(row=0, column=9)
+circle_color_combo.bind("<<ComboboxSelected>>", on_selection_change)
+
 mark_lat = tk.StringVar(value = 0)
 ttk.Label(control_frame, text="Marker Latitude:").grid(row=1, column=1, padx=5)
 marker_lat_spin = ttk.Spinbox(
@@ -178,21 +208,62 @@ marker_long_spin.bind("<Return>", on_selection_change)
 show_marker = tk.BooleanVar(value=True)
 marker_button = ttk.Checkbutton(control_frame, text="Marker", variable= show_marker).grid(row=1, column=0, padx=5)
 
+circ_lat = tk.StringVar(value = 0)
+ttk.Label(control_frame, text="Circle Latitude:").grid(row=2, column=1, padx=5)
+circle_lat_spin = ttk.Spinbox(
+    control_frame,
+    from_= -89,
+    to= 89,
+    textvariable= circ_lat
+)
+circle_lat_spin.grid(row=2, column=3)
+circle_lat_spin.bind("<<Increment>>", on_selection_change)
+circle_lat_spin.bind("<<Decrement>>", on_selection_change)
+circle_lat_spin.bind("<Return>", on_selection_change)
+
+circ_long = tk.StringVar(value = 0)
+ttk.Label(control_frame, text="Circle Longitude:").grid(row=2, column=4, padx=5)
+circle_long_spin = ttk.Spinbox(
+    control_frame,
+    from_= -180,
+    to= 179,
+    wrap= True,
+    textvariable= circ_long 
+)
+circle_long_spin.grid(row=2, column=5)
+circle_long_spin.bind("<<Increment>>", on_selection_change)
+circle_long_spin.bind("<<Decrement>>", on_selection_change)
+circle_long_spin.bind("<Return>", on_selection_change)
+
+circ_radius = tk.StringVar(value = 0)
+ttk.Label(control_frame, text="Circle Radius(Km):").grid(row=2, column=6, padx=5)
+circle_radius_spin = ttk.Spinbox(
+    control_frame,
+    from_= 0,
+    to= 100000,
+    wrap= True,
+    textvariable= circ_radius
+)
+circle_radius_spin.grid(row=2, column=7)
+circle_radius_spin.bind("<<Increment>>", on_selection_change)
+circle_radius_spin.bind("<<Decrement>>", on_selection_change)
+circle_radius_spin.bind("<Return>", on_selection_change)
+
 line_latone = tk.StringVar(value = 0)
-ttk.Label(control_frame, text="Line Lat 1:").grid(row=2, column=1, padx=5)
+ttk.Label(control_frame, text="Line Lat 1:").grid(row=3, column=1, padx=5)
 line_latone_spin = ttk.Spinbox(
     control_frame,
     from_= -89,
     to= 89,
     textvariable= line_latone
 )
-line_latone_spin.grid(row=2, column=3)
+line_latone_spin.grid(row=3, column=3)
 line_latone_spin.bind("<<Increment>>", on_selection_change)
 line_latone_spin.bind("<<Decrement>>", on_selection_change)
 line_latone_spin.bind("<Return>", on_selection_change)
 
 line_longone = tk.StringVar(value = 0)
-ttk.Label(control_frame, text="Line Long 1:").grid(row=2, column=4, padx=5)
+ttk.Label(control_frame, text="Line Long 1:").grid(row=3, column=4, padx=5)
 line_longone_spin = ttk.Spinbox(
     control_frame,
     from_= -180,
@@ -200,26 +271,26 @@ line_longone_spin = ttk.Spinbox(
     wrap= True,
     textvariable= line_longone 
 )
-line_longone_spin.grid(row=2, column=5)
+line_longone_spin.grid(row=3, column=5)
 line_longone_spin.bind("<<Increment>>", on_selection_change)
 line_longone_spin.bind("<<Decrement>>", on_selection_change)
 line_longone_spin.bind("<Return>", on_selection_change)
 
 line_lattwo = tk.StringVar(value = 0)
-ttk.Label(control_frame, text="Line Lat 2:").grid(row=2, column=6, padx=5)
+ttk.Label(control_frame, text="Line Lat 2:").grid(row=3, column=6, padx=5)
 line_lattwo_spin = ttk.Spinbox(
     control_frame,
     from_= -89,
     to= 89,
     textvariable= line_lattwo
 )
-line_lattwo_spin.grid(row=2, column=7)
+line_lattwo_spin.grid(row=3, column=7)
 line_lattwo_spin.bind("<<Increment>>", on_selection_change)
 line_lattwo_spin.bind("<<Decrement>>", on_selection_change)
 line_lattwo_spin.bind("<Return>", on_selection_change)
 
 line_longtwo = tk.StringVar(value = 0)
-ttk.Label(control_frame, text="Line Long 2:").grid(row=2, column=8, padx=5)
+ttk.Label(control_frame, text="Line Long 2:").grid(row=3, column=8, padx=5)
 line_longtwo_spin = ttk.Spinbox(
     control_frame,
     from_= -180,
@@ -227,13 +298,13 @@ line_longtwo_spin = ttk.Spinbox(
     wrap= True,
     textvariable= line_longtwo 
 )
-line_longtwo_spin.grid(row=2, column=9)
+line_longtwo_spin.grid(row=3, column=9)
 line_longtwo_spin.bind("<<Increment>>", on_selection_change)
 line_longtwo_spin.bind("<<Decrement>>", on_selection_change)
 line_longtwo_spin.bind("<Return>", on_selection_change)
 
 show_line =tk.BooleanVar(value=False)
-line_button = ttk.Checkbutton(control_frame, text="Line", variable= show_line).grid(row=2, column=0, padx=5)
+line_button = ttk.Checkbutton(control_frame, text="Line", variable= show_line).grid(row=3, column=0, padx=5)
 
 map_label = ttk.Label(root)
 map_label.pack(pady=10)
